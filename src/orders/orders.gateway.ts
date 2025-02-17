@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { OrdersService } from './orders.service';
 import { OrderStatus } from '@prisma/client';
 
-@WebSocketGateway(80, { cors: true })
+@WebSocketGateway(3000, { cors: true })
 export class OrdersGateway {
   @WebSocketServer()
   server: Server;
