@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { User } from 'src/users/user.model';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -10,25 +10,59 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUserCredentials(
-    username: string,
-    password: string,
-  ): Promise<any> {
-    console.log(username, password);
-    const user = await this.usersService.getUser({ username, password });
-
-    return user ?? null;
+  /**
+   * Проверяет пользователя по логину и паролю.
+   * @param username Имя пользователя.
+   * @param pass Пароль.
+   * @returns Пользователь без пароля или null, если проверка не прошла.
+   */
+  async validateUser(username: string, pass: string): Promise<any> {
+    const user = await this.usersService.findByUsername(username);
+    if (user && (await bcrypt.compare(pass, user.password))) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
   }
 
-  async loginWithCredentials(user: User) {
-    const payload = { username: user.username };
-
+  /**
+   * Генерирует JWT и возвращает информацию о пользователе.
+   * @param user Пользователь.
+   * @returns Объект с токеном и флагом смены пароля.
+   */
+  async login(user: any) {
+    const payload = { username: user.username, sub: user.id, role: user.role };
     return {
-      username: user.username,
-      userId: user._id,
-      avatar: user.avatar,
       access_token: this.jwtService.sign(payload),
-      expiredAt: Date.now() + 60000,
+      forceChangePassword: user.forceChangePassword,
+      userId: user.id,
     };
+  }
+
+  /**
+   * Меняет пароль пользователя и сбрасывает флаг forceChangePassword.
+   * @param userId ID пользователя.
+   * @param newPassword Новый пароль.
+   * @returns Обновленный пользователь.
+   */
+  async changePassword(userId: number, newPassword: string) {
+    if (!userId) {
+      throw new UnauthorizedException('User ID not provided');
+    }
+    const user = await this.usersService.findById(Number(userId));
+    Logger.log(user);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Проверка, что новый пароль не совпадает с текущим
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    // if (isSamePassword) {
+    //   throw new UnauthorizedException(
+    //     'New password must be different from the current one',
+    //   );
+    // }
+
+    return this.usersService.updatePassword(user.id, newPassword);
   }
 }
