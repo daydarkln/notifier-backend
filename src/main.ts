@@ -2,16 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { writeFileSync } from 'fs';
-import morgan from "morgan";
+import morgan from 'morgan';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: process.env.NODE_ENV === 'production'
+      origin:
+        process.env.NODE_ENV === 'production'
           ? 'https://order-notifier.vercel.app'
           : 'http://localhost:5173',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-      credentials: true
+      credentials: true,
     },
   });
   // app.use(morgan('dev')); // Для development
@@ -19,7 +20,6 @@ async function bootstrap() {
 
   // Или кастомный формат
   // app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
-  console.log('hey')
 
   const config = new DocumentBuilder()
     .setTitle('Shawarma Order Notification System')
@@ -30,7 +30,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-// Для генерации файла только в development режиме
+  // Для генерации файла только в development режиме
   if (process.env.NODE_ENV !== 'production') {
     writeFileSync('./openapi.json', JSON.stringify(document));
   }
