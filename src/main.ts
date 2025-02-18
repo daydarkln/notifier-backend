@@ -7,10 +7,7 @@ import morgan from 'morgan';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin:
-        process.env.NODE_ENV === 'production'
-          ? 'https://order-notifier.vercel.app'
-          : 'http://localhost:5173',
+      origin: ['https://order-notifier.vercel.app', 'http://localhost:5173'],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
     },
