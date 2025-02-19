@@ -29,7 +29,6 @@ export class OrdersController {
   }
 
   // Получение списка заказов
-  @UseGuards(JwtAuthGuard)
   @Get()
   async getOrders() {
     return this.ordersService.getOrders();
